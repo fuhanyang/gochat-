@@ -1,10 +1,11 @@
 import axios from 'axios'
 import { ElMessage, ElLoading } from 'element-plus'
+import { config } from '@/config'
 
 // 创建axios实例
 const service = axios.create({
-  baseURL: 'http://localhost:8080',
-  timeout: 10000,
+  baseURL: config.api.baseURL,
+  timeout: config.api.timeout,
   headers: {
     'Content-Type': 'application/json'
   }

@@ -58,6 +58,16 @@ const router = createRouter({
       path: '/match',
       name: 'match',
       component: () => import("@/view/match/index.vue")
+    },
+    {
+      path: '/config',
+      name: 'config',
+      component: () => import("@/view/config/index.vue")
+    },
+    {
+      path: '/env-test',
+      name: 'env-test',
+      component: () => import("@/view/env-test/index.vue")
     }
   ]
 })

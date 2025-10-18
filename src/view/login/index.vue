@@ -1,5 +1,10 @@
 <template>
   <div class="login-container">
+    <!-- 配置切换组件 - 右上角 -->
+    <div class="config-switcher-container">
+      <ConfigSwitcher />
+    </div>
+    
     <!-- 动态背景效果 -->
     <BackgroundEffects />
     
@@ -46,6 +51,7 @@ import { saveUserLoginInfo } from '@/utils/login'
 import BackgroundEffects from './components/BackgroundEffects.vue'
 import ProjectInfo from './components/ProjectInfo.vue'
 import AuthSection from './components/AuthSection.vue'
+import ConfigSwitcher from '@/components/ConfigSwitcher.vue'
 
 const router = useRouter()
 const loginStore = useLoginStore()
@@ -118,6 +124,13 @@ const handleRegister = async (registerForm) => {
   justify-content: center;
   position: relative;
   overflow: hidden;
+}
+
+.config-switcher-container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
 }
 
 .main-content {

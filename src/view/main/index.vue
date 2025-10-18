@@ -1,5 +1,10 @@
 <template>
   <div class="main-page">
+    <!-- 配置切换组件 - 右上角 -->
+    <div class="config-switcher-container">
+      <ConfigSwitcher />
+    </div>
+    
     <!-- 背景装饰 -->
     <div class="background-decoration">
       <div class="floating-shapes">
@@ -498,6 +503,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import ConfigSwitcher from '@/components/ConfigSwitcher.vue'
 
 const router = useRouter()
 
@@ -941,6 +947,13 @@ onUnmounted(() => {
   font-family: 'Arial', sans-serif;
   position: relative;
   overflow: hidden;
+}
+
+.config-switcher-container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
 }
 
 /* 背景装饰 */
