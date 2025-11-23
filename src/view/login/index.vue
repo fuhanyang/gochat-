@@ -1,9 +1,5 @@
 <template>
   <div class="login-container">
-    <!-- 配置切换组件 - 右上角 -->
-    <div class="config-switcher-container">
-      <ConfigSwitcher />
-    </div>
     
     <!-- 动态背景效果 -->
     <BackgroundEffects />
@@ -51,7 +47,6 @@ import { saveUserLoginInfo } from '@/utils/login'
 import BackgroundEffects from './components/BackgroundEffects.vue'
 import ProjectInfo from './components/ProjectInfo.vue'
 import AuthSection from './components/AuthSection.vue'
-import ConfigSwitcher from '@/components/ConfigSwitcher.vue'
 
 const router = useRouter()
 const loginStore = useLoginStore()
@@ -80,7 +75,7 @@ const handleLogin = async (loginForm) => {
         loginStore.setCurrentUser(loginForm.accountNum)
         loginStore.setUserToken(loginForm.accountNum, { jwt })
         ElMessage.success('登录成功！')
-        router.push('/main')
+        router.push('/dashboard')
       } else {
         ElMessage.error('登录失败：未获取到有效Token')
       }
