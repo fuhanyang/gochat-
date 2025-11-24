@@ -31,6 +31,14 @@ export default ({
       entryFileNames: 'assets/[name].[hash].js',
       chunkFileNames: 'assets/[name].[hash].js',
       assetFileNames: 'assets/[name].[hash].[ext]',
+      manualChunks: {
+        // 将Vue相关库分离
+        'vue-vendor': ['vue', 'vue-router', 'pinia'],
+        // 将Element Plus分离
+        'element-plus': ['element-plus'],
+        // 将工具库分离
+        'utils': ['axios']
+      }
     },
   }
 

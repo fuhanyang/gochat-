@@ -30,9 +30,9 @@ const router = createRouter({
       component: () => import("@/view/login/index.vue")
     },
     {
-      path: '/main',
-      name: 'main',
-      component: () => import("@/view/main/index.vue")
+      path: '/dashboard',
+      name: 'dashboard',
+      component: () => import("@/view/dashboard/index.vue")
     },
     {
       path: '/userinfo',
@@ -58,6 +58,22 @@ const router = createRouter({
       path: '/match',
       name: 'match',
       component: () => import("@/view/match/index.vue")
+    },
+    // 工作流平台
+    {
+      path: '/workflow',
+      name: 'workflow',
+      component: () => import("@/view/workflow/index.vue")
+    },
+    {
+      path: '/workflow/invoke',
+      name: 'workflowInvoke',
+      component: () => import("@/view/workflow/Invoke.vue")
+    },
+    {
+      path: '/workflow/execution/:id',
+      name: 'workflowExecution',
+      component: () => import("@/view/workflow/Execution.vue")
     }
   ]
 })
