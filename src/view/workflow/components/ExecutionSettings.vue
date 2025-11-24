@@ -135,6 +135,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { InfoFilled, Plus, Delete } from '@element-plus/icons-vue'
+import { saveWorkflowConfig } from '@/api/workflow'
 
 defineEmits(['terminate'])
 
@@ -157,6 +158,7 @@ const fetchParamSchema = async () => {
   
   // 后端返回的定义列表
   const schema = [
+    { key: 'backup_location', label: '备份位置', required: false, description: '备份文件存储位置' },
     { key: 'target_date', label: '目标日期', required: true, description: '格式: YYYY-MM-DD' },
     { key: 'compress_level', label: '压缩等级', required: false, default: '5', description: '1-9，数字越大压缩越高' },
     { key: 'notify_list', label: '通知列表', required: true, default: 'admin@example.com', description: '多个邮箱用逗号分隔' }
@@ -193,8 +195,8 @@ const resetParams = () => {
   ElMessage.info('已重置参数')
 }
 
-const saveConfig = () => {
-  // 校验必填项
+const saveConfig = async () => {
+  // 数据校验
   const missingParams = parameters.value.filter(p => p.required && !p.value)
   if (missingParams.length > 0) {
     const names = missingParams.map(p => p.label || p.key).join(', ')
@@ -203,19 +205,40 @@ const saveConfig = () => {
   }
 
   saving.value = true
-  setTimeout(() => {
-    // 构造提交对象
-    const submitData = {}
+  
+  try {
+    // 构造请求数据
+    const submitData = {
+      parameters: {},
+      systemConfig: { ...systemForm }
+    }
+    
     parameters.value.forEach(p => {
-      if (p.key) submitData[p.key] = p.value
+      if (p.key) submitData.parameters[p.key] = p.value
     })
+
+    // 使用项目已有的API服务层调用
+    // 注意：这里需要executionId，可以根据实际业务场景获取
+    const executionId = 'current' // 或者从props/route中获取
     
-    console.log('Submit Data:', submitData)
-    console.log('System Config:', systemForm)
+    const response = await saveWorkflowConfig(executionId, submitData)
     
+    // 根据项目统一的响应格式处理结果
+    if (response.code === 200) {
+      ElMessage.success('配置保存成功')
+      
+      // 保存成功后可以触发其他操作
+      // this.$emit('config-saved', submitData)
+    } else {
+      throw new Error(response.msg || '保存失败')
+    }
+    
+  } catch (error) {
+    console.error('保存配置失败:', error)
+    ElMessage.error(`保存失败: ${error.message}`)
+  } finally {
     saving.value = false
-    ElMessage.success('配置已保存')
-  }, 800)
+  }
 }
 
 const deleteRecord = () => {

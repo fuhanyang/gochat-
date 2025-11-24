@@ -56,4 +56,20 @@ export function cancelExecution(runId) {
   })
 }
 
+// Workflow configuration
+export function saveWorkflowConfig(executionId, configData) {
+  return request({
+    url: `/api/v1/executions/${executionId}/config`,
+    method: 'post',
+    data: configData
+  })
+}
+
+export function fetchWorkflowConfig(executionId) {
+  return request({
+    url: `/api/v1/executions/${executionId}/config`,
+    method: 'get'
+  })
+}
+
 
