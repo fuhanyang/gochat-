@@ -1,5 +1,5 @@
 // src/utils/websocket.js
-import { config } from '@/config'
+import config from '@/config'
 
 /**
  * WebSocket连接管理类

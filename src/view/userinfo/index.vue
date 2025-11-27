@@ -13,10 +13,10 @@
     <!-- 1. 顶部导航栏 -->
     <nav class="top-nav glass-card">
       <div class="nav-left">
-        <div class="nav-back-btn" @click="goDashboard" title="返回仪表盘">
+        <div class="nav-back-btn" @click="goHome" title="返回仪表盘">
           <el-icon><ArrowLeft /></el-icon>
         </div>
-        <div class="logo-container" @click="goDashboard">
+        <div class="logo-container" @click="goHome">
           <div class="logo-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#722ED1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -285,8 +285,8 @@ const handleSaveProfile = (newData) => {
   Object.assign(userInfo, newData)
 }
 
-const goDashboard = () => {
-  router.push({ name: 'dashboard' })
+const goHome = () => {
+  router.push({ name: 'home' })
 }
 
 const toggleUserMenu = () => {

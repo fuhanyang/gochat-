@@ -1,7 +1,7 @@
 <template>
   <header class="topnav">
     <div class="topnav__left">
-      <div class="brand">
+      <div class="brand" @click="goDashboard">
         <img class="brand__logo" src="/logo.png" alt="FlowMaster" />
         <span class="brand__name">FlowMaster</span>
       </div>
@@ -59,6 +59,10 @@ function go(path) {
     router.push(path)
   }
 }
+
+function goDashboard() {
+  router.push('/home')
+}
 </script>
 
 <style scoped lang="scss">
@@ -81,6 +85,7 @@ function go(path) {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  cursor: pointer;
 }
 .brand__logo {
   width: 28px;

@@ -1,78 +1,291 @@
-
 <template>
-    <div class="relative isolate h-screen overflow-hidden box-border">
-      <div class="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80" aria-hidden="true">
-        <div class="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-30 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]" style="clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)"></div>
+  <div class="main-page">
+    
+    <!-- 背景装饰 -->
+    <div class="background-decoration">
+      <div class="floating-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="shape shape-4"></div>
       </div>
-      <div class="h-full flex flex-col items-center justify-center -mt-16">
-        <div class="text-center w-32 h-32 mb-8"><img class="w-full h-full" src="/public/logo.png"> </div>
-        <div class="hidden sm:mb-8 sm:flex sm:justify-center">
-          <div class="relative rounded-full px-3 py-1 text-sm leading-6 text-gray-600 ring-1 ring-gray-900/10 hover:ring-gray-900/20">
-            更加深入了解Gin-Vue-Admin. <a href="https://space.bilibili.com/322210472" class="font-semibold text-indigo-600" target="_blank"> 前往视频站 <span aria-hidden="true">&rarr;</span></a>
-          </div>
-        </div>
-        <div class="text-center">
-          <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">GoChat 项目</h1>
-          <p class="mt-6 text-lg leading-8 text-gray-600">基于Vue3 + Vite的现代化聊天应用前端框架</p>
-          
-          <!-- 功能模块导航 -->
-          <div class="mt-10">
-            <h2 class="text-xl font-semibold text-gray-800 mb-6">功能模块测试</h2>
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-4xl">
-                     <router-link to="/login" class="module-card">
-                       <div class="text-2xl mb-2">🔐</div>
-                       <div class="font-medium">用户登录</div>
-                     </router-link>
-              <router-link to="/userinfo" class="module-card">
-                <div class="text-2xl mb-2">👤</div>
-                <div class="font-medium">用户信息</div>
-              </router-link>
-              <router-link to="/message" class="module-card">
-                <div class="text-2xl mb-2">💬</div>
-                <div class="font-medium">消息显示</div>
-              </router-link>
-              <router-link to="/websocket" class="module-card">
-                <div class="text-2xl mb-2">🔌</div>
-                <div class="font-medium">WebSocket</div>
-              </router-link>
-              <router-link to="/upload" class="module-card">
-                <div class="text-2xl mb-2">📁</div>
-                <div class="font-medium">文件上传</div>
-              </router-link>
-              <router-link to="/notification" class="module-card">
-                <div class="text-2xl mb-2">🔔</div>
-                <div class="font-medium">通知模块</div>
-              </router-link>
-              <router-link to="/tag" class="module-card">
-                <div class="text-2xl mb-2">🏷️</div>
-                <div class="font-medium">标签模块</div>
-              </router-link>
-              <router-link to="/match" class="module-card">
-                <div class="text-2xl mb-2">🎯</div>
-                <div class="font-medium">匹配模块</div>
-              </router-link>
-              <router-link to="/error" class="module-card">
-                <div class="text-2xl mb-2">⚠️</div>
-                <div class="font-medium">错误处理</div>
-              </router-link>
-            </div>
-          </div>
-        </div>
+    </div>
+    
+    <!-- 左侧用户信息区域 -->
+    <LeftPanel 
+      @view-profile="viewProfile"
+      @search-tag="searchByTag"
+    />
+    
+    <!-- 右侧主内容区域 -->
+    <RightPanel 
+      ref="rightPanelRef"
+      @show-context-menu="showFriendMenu"
+      @show-profile="showUserProfile"
+      @like-user="likeUser"
+      @start-chat="startChat"
+      @send-request="sendFriendRequest"
+    />
+    
+    <!-- 用户资料弹窗 -->
+    <UserProfileModal 
+      :visible="showUserProfileModal"
+      :user="selectedUser"
+      @close="closeUserProfile"
+      @open-chat="openChat"
+      @like-user="likeUser"
+      @send-request="sendFriendRequest"
+    />
+    
+    <!-- 右键菜单 -->
+    <div class="context-menu" v-if="showContextMenu" :style="contextMenuStyle">
+      <div class="menu-item" @click="viewFriendProfile">
+        <i class="icon-profile">👤</i>
+        <span>查看资料</span>
       </div>
+      <div class="menu-item" @click="muteFriend">
+        <i class="icon-mute">🔇</i>
+        <span>静音</span>
+      </div>
+      <div class="menu-item" @click="deleteFriend">
+        <i class="icon-delete">🗑️</i>
+        <span>删除好友</span>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ElTag,ElButton } from "element-plus";
+import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import LeftPanel from './components/LeftPanel.vue'
+
+const router = useRouter()
+
+import RightPanel from './components/RightPanel.vue'
+import UserProfileModal from './components/UserProfileModal.vue'
+
+// 引用
+const rightPanelRef = ref(null)
+
+// 用户资料弹窗
+const showUserProfileModal = ref(false)
+const selectedUser = ref(null)
+
+// 交互状态
+const showContextMenu = ref(false)
+const contextMenuStyle = ref({})
+const selectedFriend = ref(null)
+
+// 打开聊天
+const openChat = (friend) => {
+  console.log('打开与', friend.name, '的聊天')
+  // 调用RightPanel的方法打开聊天
+  if (rightPanelRef.value) {
+    rightPanelRef.value.openChat(friend)
+  }
+  // 如果是从弹窗打开的，关闭弹窗
+  closeUserProfile()
+}
+
+// 查看资料
+const viewProfile = () => {
+  console.log('查看用户资料')
+  router.push({ name: 'userinfo' })
+}
+
+// 按标签搜索
+const searchByTag = (tag) => {
+  console.log('按标签搜索:', tag.name)
+  // 可以通过 ref 调用 RightPanel 的方法或者共享状态来实现跨组件搜索
+}
+
+// 用户资料相关
+const showUserProfile = (user) => {
+  selectedUser.value = user
+  showUserProfileModal.value = true
+}
+
+const closeUserProfile = () => {
+  showUserProfileModal.value = false
+  selectedUser.value = null
+}
+
+const likeUser = (user) => {
+  console.log('点赞用户:', user?.name)
+}
+
+const startChat = (user) => {
+  console.log('开始与用户聊天:', user?.name)
+  closeUserProfile()
+}
+
+const sendFriendRequest = (user) => {
+  console.log('发送好友申请给:', user?.name)
+  closeUserProfile()
+}
+
+// 右键菜单
+const showFriendMenu = (event, friend) => {
+  event.preventDefault()
+  selectedFriend.value = friend
+  contextMenuStyle.value = {
+    left: event.clientX + 'px',
+    top: event.clientY + 'px'
+  }
+  showContextMenu.value = true
+}
+
+const viewFriendProfile = () => {
+  console.log('查看好友资料:', selectedFriend.value?.name)
+  showContextMenu.value = false
+  if (selectedFriend.value) {
+    showUserProfile(selectedFriend.value)
+  }
+}
+
+const muteFriend = () => {
+  console.log('静音好友:', selectedFriend.value?.name)
+  showContextMenu.value = false
+}
+
+const deleteFriend = () => {
+  console.log('删除好友:', selectedFriend.value?.name)
+  showContextMenu.value = false
+}
+
+// 点击其他地方关闭菜单
+const handleClickOutside = () => {
+  showContextMenu.value = false
+}
+
+onMounted(() => {
+  // 添加点击事件监听
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
+<style lang="scss" scoped>
+.main-page {
+  display: flex;
+  height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-family: 'Arial', sans-serif;
+  position: relative;
+  overflow: hidden;
+}
 
-<style scoped lang="scss">
-.module-card {
-  @apply bg-white rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200 hover:border-indigo-300 text-center no-underline text-gray-700 hover:text-indigo-600;
-  
-  &:hover {
-    transform: translateY(-2px);
+/* 背景装饰 */
+.background-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.floating-shapes {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.shape {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  animation: float 6s ease-in-out infinite;
+}
+
+.shape-1 {
+  width: 80px;
+  height: 80px;
+  top: 20%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.shape-2 {
+  width: 120px;
+  height: 120px;
+  top: 60%;
+  right: 15%;
+  animation-delay: 2s;
+}
+
+.shape-3 {
+  width: 60px;
+  height: 60px;
+  top: 80%;
+  left: 20%;
+  animation-delay: 4s;
+}
+
+.shape-4 {
+  width: 100px;
+  height: 100px;
+  top: 30%;
+  right: 30%;
+  animation-delay: 1s;
+}
+
+/* 右键菜单 */
+.context-menu {
+  position: fixed;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  z-index: 1000;
+  animation: slideDown 0.3s ease;
+}
+
+.context-menu .menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  font-size: 14px;
+  color: #374151;
+}
+
+.context-menu .menu-item:hover {
+  background: #f3f4f6;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .main-page {
+    flex-direction: column;
   }
 }
 </style>

@@ -89,7 +89,7 @@ const goHome = () => {
 }
 
 const goBackList = () => {
-  router.push('/dashboard')
+  router.push('/home')
 }
 
 const executionData = ref({

@@ -5,8 +5,8 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'home',
-      component:()=> import("@/view/home/index.vue")
+      name: 'landing',
+      component:()=> import("@/view/landing/index.vue")
     },
     // 功能模块测试页面路由
     {
@@ -30,9 +30,9 @@ const router = createRouter({
       component: () => import("@/view/login/index.vue")
     },
     {
-      path: '/dashboard',
-      name: 'dashboard',
-      component: () => import("@/view/dashboard/index.vue")
+      path: '/home',
+      name: 'home',
+      component: () => import("@/view/home/index.vue")
     },
     {
       path: '/userinfo',

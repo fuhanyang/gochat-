@@ -51,6 +51,31 @@
         <span class="sub-text">同步自个人中心数据</span>
       </div>
       
+      <!-- 历史统计概览 -->
+      <div class="history-stats-banner">
+        <div class="stat-box">
+          <div class="stat-icon">📊</div>
+          <div class="stat-info">
+            <div class="stat-value">128</div>
+            <div class="stat-label">总执行次数</div>
+          </div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-icon">✅</div>
+          <div class="stat-info">
+            <div class="stat-value">98.5%</div>
+            <div class="stat-label">成功率</div>
+          </div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-icon">⚡</div>
+          <div class="stat-info">
+            <div class="stat-value">420h</div>
+            <div class="stat-label">节省时间</div>
+          </div>
+        </div>
+      </div>
+
       <div class="history-list">
         <div 
           class="history-item" 
@@ -81,6 +106,9 @@
       <div class="section-header">
         <h2>我的收藏</h2>
       </div>
+      <!-- 收藏装饰背景 -->
+      <div class="fav-bg-decoration"></div>
+
       <div v-if="favoriteWorkflows.length > 0">
         <WorkflowList
           :workflows="favoriteWorkflows"
@@ -91,9 +119,13 @@
         />
       </div>
       <div v-else class="empty-state">
-        <div class="empty-icon">⭐</div>
+        <div class="empty-illustration">
+          <div class="illustration-circle"></div>
+          <div class="illustration-star">⭐</div>
+        </div>
         <div class="empty-text">暂无收藏的工作流</div>
-        <el-button type="primary" plain @click="activeTab = 'market'">去市场看看</el-button>
+        <div class="empty-desc">收藏常用的工作流，提高工作效率</div>
+        <el-button type="primary" round class="empty-btn" @click="activeTab = 'market'">去市场看看</el-button>
       </div>
     </div>
 
@@ -103,9 +135,20 @@
         <h2>工作流设置</h2>
       </div>
       
-      <div class="settings-card">
-        <div class="setting-group">
-          <h3>常规设置</h3>
+      <div class="settings-wrapper">
+        <!-- 用户资料卡片 -->
+        <div class="user-profile-card">
+          <div class="user-avatar-placeholder">U</div>
+          <div class="user-info-text">
+            <h3>FlowUser</h3>
+            <p>高级版会员</p>
+          </div>
+          <el-button type="primary" link>管理账号</el-button>
+        </div>
+
+        <div class="settings-card">
+          <div class="setting-group">
+            <h3><span class="group-icon">⚙️</span> 常规设置</h3>
           <div class="setting-item">
             <div class="setting-info">
               <div class="setting-label">执行完成后通知</div>
@@ -123,7 +166,7 @@
         </div>
 
         <div class="setting-group">
-          <h3>开发者选项</h3>
+          <h3><span class="group-icon">🛠️</span> 开发者选项</h3>
           <div class="setting-item">
             <div class="setting-info">
               <div class="setting-label">显示调试信息</div>
@@ -140,6 +183,7 @@
           </div>
         </div>
       </div>
+    </div>
     </div>
 
     <footer class="wf-footer">
@@ -304,7 +348,10 @@ onMounted(() => {
   background: linear-gradient(180deg, var(--brand-light) 0%, #ffffff 240px, #ffffff 100%);
   position: relative;
   padding: 16px;
-  overflow: hidden;
+  overflow-x: hidden; /* 防止水平滚动 */
+  box-sizing: border-box; /* 确保padding包含在高度内 */
+  display: flex;
+  flex-direction: column;
 }
 .wf-section {
   margin-top: 16px;
@@ -335,6 +382,8 @@ onMounted(() => {
 /* 动画 */
 .tab-animate {
   animation: fadeIn 0.4s ease-out;
+  flex: 1;
+  width: 100%;
 }
 
 @keyframes fadeIn {
@@ -360,6 +409,53 @@ onMounted(() => {
   margin: 0;
   font-size: 24px;
   color: var(--text-primary);
+}
+
+/* 历史统计概览 */
+.history-stats-banner {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.stat-box {
+  flex: 1;
+  min-width: 150px;
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  transition: transform 0.3s ease;
+}
+
+.stat-box:hover {
+  transform: translateY(-2px);
+}
+
+.stat-icon {
+  font-size: 28px;
+  background: #F3F4F6;
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #6B7280;
 }
 
 .sub-text {
@@ -442,7 +538,105 @@ onMounted(() => {
 .history-status-text.success { color: #10B981; }
 .history-status-text.failed { color: #EF4444; }
 
-/* 设置样式 */
+/* 空状态优化 */
+.empty-state {
+  text-align: center;
+  padding: 80px 0;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+  position: relative;
+  overflow: hidden;
+}
+
+.empty-illustration {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 24px;
+}
+
+.illustration-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+  animation: pulse 3s infinite ease-in-out;
+}
+
+.illustration-star {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 48px;
+}
+
+.empty-text {
+  font-size: 20px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.empty-desc {
+  font-size: 14px;
+  color: #9CA3AF;
+  margin-bottom: 32px;
+}
+
+.empty-btn {
+  padding: 12px 32px;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+/* 设置样式优化 */
+.settings-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.user-profile-card {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.user-avatar-placeholder {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.user-info-text h3 {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+}
+
+.user-info-text p {
+  margin: 0;
+  color: #667eea;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 .settings-card {
   background: white;
   border-radius: 20px;
@@ -450,63 +644,14 @@ onMounted(() => {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
-.setting-group {
-  margin-bottom: 32px;
-}
-
-.setting-group:last-child {
-  margin-bottom: 0;
-}
-
 .setting-group h3 {
-  font-size: 18px;
-  color: #374151;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #E5E7EB;
-}
-
-.setting-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 16px 0;
+  gap: 10px;
 }
 
-.setting-info {
-  flex: 1;
-}
-
-.setting-label {
-  font-size: 16px;
-  font-weight: 500;
-  color: #1F2937;
-  margin-bottom: 4px;
-}
-
-.setting-desc {
-  font-size: 14px;
-  color: #6B7280;
-}
-
-/* 空状态 */
-.empty-state {
-  text-align: center;
-  padding: 60px 0;
-  background: rgba(255,255,255,0.5);
-  border-radius: 20px;
-}
-
-.empty-icon {
-  font-size: 64px;
-  margin-bottom: 24px;
-  opacity: 0.5;
-}
-
-.empty-text {
-  font-size: 18px;
-  color: #6B7280;
-  margin-bottom: 24px;
+.group-icon {
+  font-size: 20px;
 }
 
 /* 交互优化：禁用非输入区域文字选中与文本光标 */
