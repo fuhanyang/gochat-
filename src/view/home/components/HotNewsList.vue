@@ -56,7 +56,7 @@
       <transition-group name="match-list" tag="div" class="match-list-container">
         <div 
           class="news-item scroll-item" 
-          v-for="(news, index) in hotNewsList" 
+          v-for="(news, index) in paginatedNews" 
           :key="news.id"
           :style="{ '--delay': index * 0.1 + 's' }"
           @click="openNewsDetail(news)"
@@ -88,6 +88,35 @@
         </div>
       </transition-group>
       
+      <!-- 分页控件 -->
+      <div class="pagination-controls" v-if="totalPages > 1">
+        <button 
+          class="page-btn" 
+          :disabled="currentPage === 1"
+          @click="changePage(currentPage - 1)"
+        >
+          &lt;
+        </button>
+        <div class="page-numbers">
+          <span 
+            v-for="page in displayedPages" 
+            :key="page"
+            class="page-number"
+            :class="{ active: currentPage === page, dots: page === '...' }"
+            @click="page !== '...' && changePage(page)"
+          >
+            {{ page }}
+          </span>
+        </div>
+        <button 
+          class="page-btn" 
+          :disabled="currentPage === totalPages"
+          @click="changePage(currentPage + 1)"
+        >
+          &gt;
+        </button>
+      </div>
+
       <!-- 空状态 -->
       <transition name="fade" appear>
         <div class="empty-state" v-if="hotNewsList.length === 0">
@@ -101,13 +130,57 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 // 热点新闻相关
 const isLoadingNews = ref(false)
 const hotNewsList = ref([])
 const newsTags = ['推荐', 'AI科技', '云计算', '新能源', 'Web3', '医疗健康']
 const selectedTag = ref('推荐')
+
+// 分页相关
+const currentPage = ref(1)
+const pageSize = 5
+
+// 分页计算
+const totalPages = computed(() => Math.ceil(hotNewsList.value.length / pageSize))
+
+const paginatedNews = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return hotNewsList.value.slice(start, start + pageSize)
+})
+
+// 显示的页码
+const displayedPages = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+  const delta = 2
+  const range = []
+
+  for (let i = Math.max(2, current - delta); i <= Math.min(total - 1, current + delta); i++) {
+    range.push(i)
+  }
+
+  if (current - delta > 2) {
+    range.unshift('...')
+  }
+  if (current + delta < total - 1) {
+    range.push('...')
+  }
+
+  range.unshift(1)
+  if (total > 1) {
+    range.push(total)
+  }
+
+  return range
+})
+
+const changePage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+  }
+}
 
 // 选择标签
 const selectTag = (tag) => {
@@ -120,6 +193,7 @@ const selectTag = (tag) => {
 const fetchHotNews = async () => {
   isLoadingNews.value = true
   hotNewsList.value = [] // 清空列表以显示加载状态
+  currentPage.value = 1 // 重置页码
   console.log(`开始调用工作流获取${selectedTag.value}热点...`)
   
   // 模拟后端工作流返回数据
@@ -225,8 +299,8 @@ const shareNews = (news) => {
 .matching-controls {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(240, 248, 255, 0.8));
   border-radius: 20px;
-  padding: 20px;
-  margin-bottom: 20px;
+  padding: 15px;
+  margin-bottom: 15px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -254,7 +328,7 @@ const shareNews = (news) => {
 }
 
 .matching-title p {
-  margin: 0 0 20px 0;
+  margin: 0 0 10px 0;
   color: #6b7280;
   font-size: 14px;
 }
@@ -263,16 +337,16 @@ const shareNews = (news) => {
 .hotspot-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 8px;
+  margin-bottom: 15px;
 }
 
 .hotspot-tag {
-  padding: 6px 12px;
+  padding: 4px 10px;
   background: rgba(255, 255, 255, 0.5);
   border: 1px solid rgba(102, 126, 234, 0.2);
   border-radius: 20px;
-  font-size: 13px;
+  font-size: 12px;
   color: #6b7280;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -338,12 +412,14 @@ const shareNews = (news) => {
   flex: 1;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(248, 250, 252, 0.7));
   border-radius: 20px;
-  padding: 20px;
+  padding: 15px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.25);
-  overflow-y: auto;
+  overflow: hidden; /* 防止出现双重滚动条 */
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .matching-results::before {
@@ -359,17 +435,17 @@ const shareNews = (news) => {
 /* 新闻卡片样式 */
 .news-item {
   display: flex;
-  padding: 15px;
-  border-radius: 15px;
+  padding: 10px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   border: 1px solid rgba(102, 126, 234, 0.1);
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.6), rgba(248, 250, 252, 0.4));
   backdrop-filter: blur(10px);
   position: relative;
   overflow: hidden;
-  gap: 15px;
+  gap: 10px;
 }
 
 .news-item::before {
@@ -391,9 +467,9 @@ const shareNews = (news) => {
 
 .news-image {
   position: relative;
-  width: 100px;
-  height: 80px;
-  border-radius: 10px;
+  width: 80px;
+  height: 60px;
+  border-radius: 8px;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -411,12 +487,12 @@ const shareNews = (news) => {
 
 .news-tag {
   position: absolute;
-  top: 6px;
-  left: 6px;
+  top: 4px;
+  left: 4px;
   background: rgba(102, 126, 234, 0.9);
   color: white;
-  font-size: 10px;
-  padding: 2px 6px;
+  font-size: 9px;
+  padding: 2px 4px;
   border-radius: 4px;
   font-weight: 600;
 }
@@ -429,13 +505,13 @@ const shareNews = (news) => {
 }
 
 .news-title {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: #1f2937;
-  margin-bottom: 6px;
-  line-height: 1.4;
+  margin-bottom: 4px;
+  line-height: 1.3;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -443,8 +519,8 @@ const shareNews = (news) => {
 .news-summary {
   font-size: 12px;
   color: #6b7280;
-  margin-bottom: 8px;
-  line-height: 1.5;
+  margin-bottom: 4px;
+  line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -480,8 +556,8 @@ const shareNews = (news) => {
 .share-btn {
   background: rgba(102, 126, 234, 0.1);
   color: #667eea;
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
 }
 
 .share-btn:hover {
@@ -491,8 +567,8 @@ const shareNews = (news) => {
 }
 
 .action-btn {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border: none;
   border-radius: 50%;
   cursor: pointer;
@@ -500,7 +576,7 @@ const shareNews = (news) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 /* 按钮发光效果 */
@@ -580,6 +656,16 @@ const shareNews = (news) => {
   display: flex;
   flex-direction: column;
   position: relative;
+  flex: 1;
+  /* 隐藏滚动条但保留滚动功能 */
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+/* 隐藏 Webkit 浏览器滚动条 */
+.match-list-container::-webkit-scrollbar {
+  display: none;
 }
 
 /* 匹配列表动画 */
@@ -589,6 +675,8 @@ const shareNews = (news) => {
 }
 .match-list-leave-active {
   transition: all 0.4s cubic-bezier(0.55, 0.06, 0.68, 0.19);
+  position: absolute;
+  width: 100%;
 }
 .match-list-enter-from {
   opacity: 0;
@@ -698,6 +786,81 @@ const shareNews = (news) => {
   25% { transform: translateY(-15px) translateX(10px) scale(1.2); opacity: 0.8; }
   50% { transform: translateY(-25px) translateX(-5px) scale(0.8); opacity: 1; }
   75% { transform: translateY(-10px) translateX(15px) scale(1.1); opacity: 0.7; }
+}
+
+/* 分页控件 */
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: auto; /* 推到底部 */
+  padding-top: 10px;
+  padding-bottom: 2px;
+  z-index: 20;
+  position: relative;
+  border-top: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.page-btn {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #667eea;
+  transition: all 0.3s ease;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #667eea;
+  color: white;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.page-number {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #6b7280;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.page-number:hover:not(.dots) {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+}
+
+.page-number.active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+}
+
+.page-number.dots {
+  cursor: default;
+  color: #9ca3af;
 }
 </style>
 

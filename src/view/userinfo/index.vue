@@ -31,8 +31,8 @@
         <div class="icon-btn" title="通知">
           <el-icon><Bell /></el-icon>
         </div>
-        <div class="icon-btn" title="设置">
-          <el-icon><Setting /></el-icon>
+        <div class="icon-btn" title="退出登录" @click="handleLogout">
+          <el-icon><SwitchButton /></el-icon>
         </div>
         <div class="user-avatar-container" @click="toggleUserMenu">
           <img src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" alt="User" class="user-avatar" />
@@ -244,6 +244,10 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessageBox, ElMessage } from 'element-plus'
+import { useLoginStore } from '@/pinia/modules/login'
+import { logout } from '@/api/login'
+import { clearUserLoginInfo } from '@/utils/login'
 import EditProfileModal from './components/EditProfileModal.vue'
 import { 
   Bell, 
@@ -260,10 +264,12 @@ import {
   Connection,
   ArrowRight,
   Camera,
-  ArrowLeft
+  ArrowLeft,
+  SwitchButton
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const loginStore = useLoginStore()
 
 // 用户数据状态
 const userInfo = reactive({
@@ -291,6 +297,49 @@ const goHome = () => {
 
 const toggleUserMenu = () => {
   console.log('Toggle user menu')
+}
+
+const handleLogout = () => {
+  ElMessageBox.confirm(
+    '确定要退出登录吗？',
+    '提示',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  )
+    .then(async () => {
+      try {
+        // 尝试调用注销接口
+        const accountNum = loginStore.currentUser || sessionStorage.getItem('currentUser')
+        if (accountNum) {
+          try {
+            await logout({ accountNum, password: '' })
+          } catch (e) {
+            console.warn('注销接口调用失败，继续执行本地清除', e)
+          }
+        }
+        
+        // 清理本地存储和状态
+        clearUserLoginInfo()
+        loginStore.clearUserData()
+        
+        ElMessage({
+          type: 'success',
+          message: '已退出登录',
+        })
+        router.push('/login')
+      } catch (error) {
+        console.error('退出登录出错:', error)
+        // 强制退出
+        clearUserLoginInfo()
+        router.push('/login')
+      }
+    })
+    .catch(() => {
+      // 取消退出
+    })
 }
 </script>
 

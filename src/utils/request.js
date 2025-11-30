@@ -61,6 +61,10 @@ service.interceptors.response.use(
 
     // 如果返回的状态码为200，说明接口请求成功，可以正常拿到数据
     if (response.status === 200) {
+      // 将headers附加到返回结果中，以便获取Authorization等header信息
+      if (res && typeof res === 'object') {
+        res.headers = response.headers
+      }
       return res
     } else {
       // 否则的话抛出错误

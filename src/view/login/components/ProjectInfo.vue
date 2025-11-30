@@ -16,10 +16,10 @@
     <div class="info-content">
       <div class="logo-section">
         <div class="logo">
-          <img src="/logo.png" alt="GoChat Logo" />
+          <img src="/logo.png" alt="CYGlowFlow Logo" />
         </div>
-        <h1 class="project-title">GoChat</h1>
-        <p class="project-subtitle">现代化聊天应用</p>
+        <h1 class="project-title">CYGlowFlow</h1>
+        <p class="project-subtitle">个人工作流项目</p>
       </div>
       
       <div class="features">

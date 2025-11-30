@@ -5,8 +5,8 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'landing',
-      component:()=> import("@/view/landing/index.vue")
+      name: 'root',
+      component: () => import("@/view/login/index.vue")
     },
     // 功能模块测试页面路由
     {
@@ -28,6 +28,11 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: () => import("@/view/login/index.vue")
+    },
+    {
+      path: '/landing',
+      name: 'landing',
+      component: () => import("@/view/landing/index.vue")
     },
     {
       path: '/home',
@@ -76,6 +81,16 @@ const router = createRouter({
       component: () => import("@/view/workflow/Execution.vue")
     }
   ]
+})
+
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('jwt') || sessionStorage.getItem('jwt')
+  
+  if (token && (to.path === '/' || to.path === '/login')) {
+    next('/home')
+  } else {
+    next()
+  }
 })
 
 export default router

@@ -1,7 +1,7 @@
-# gochat-
-gochat前端客户端部分
+# CYGlowFlow
+CYGlowFlow前端客户端部分
 
-# gva-client
+# cyglowflow-client
 
 This template should help get you started developing with Vue 3 in Vite.
 
