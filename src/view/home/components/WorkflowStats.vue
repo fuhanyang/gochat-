@@ -53,7 +53,7 @@
       </div>
 
       <!-- 可滚动列表区域 -->
-      <div class="scrollable-list-wrapper">
+      <div class="scrollable-list-wrapper" ref="listContainerRef">
         <div class="execution-list-container">
           <div 
             class="execution-card compact-card" 
@@ -122,14 +122,50 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
 // 分页相关
 const currentPage = ref(1)
-const pageSize = 5
+const pageSize = ref(5)
+const listContainerRef = ref(null)
+const containerHeight = ref(0)
+
+// 动态计算每页显示数量
+const calculatePageSize = () => {
+  if (listContainerRef.value) {
+    const containerRect = listContainerRef.value.getBoundingClientRect()
+    const itemHeight = 50 // 单个执行记录卡片的实际高度（根据实际测量调整）
+    
+    // 直接使用 scrollable-list-wrapper 的可用高度
+    const availableHeight = containerRect.height
+    
+    // 确保不超出容器：减去更多缓冲空间，确保不会出现滚动条
+    const calculatedSize = Math.max(12, Math.floor((availableHeight - 20) / itemHeight))
+    pageSize.value = calculatedSize
+    
+    console.log('Container height:', containerRect.height, 'Item height:', itemHeight, 'Calculated size:', calculatedSize)
+  }
+}
+
+// 监听窗口大小变化
+const handleResize = () => {
+  calculatePageSize()
+}
+
+onMounted(() => {
+  nextTick(() => {
+    calculatePageSize()
+    window.addEventListener('resize', handleResize)
+  })
+})
+
+// 组件卸载时移除事件监听
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+})
 
 // 工作流统计数据
 const workflowStats = ref({
@@ -147,11 +183,11 @@ const workflowStats = ref({
 })
 
 // 分页计算
-const totalPages = computed(() => Math.ceil(workflowStats.value.recentRecords.length / pageSize))
+const totalPages = computed(() => Math.ceil(workflowStats.value.recentRecords.length / pageSize.value))
 
 const paginatedRecords = computed(() => {
-  const start = (currentPage.value - 1) * pageSize
-  return workflowStats.value.recentRecords.slice(start, start + pageSize)
+  const start = (currentPage.value - 1) * pageSize.value
+  return workflowStats.value.recentRecords.slice(start, start + pageSize.value)
 })
 
 // 显示的页码
@@ -573,6 +609,7 @@ const viewExecutionDetail = (record) => {
   margin-top: 5px;
   margin-bottom: 5px;
   padding: 2px;
+  flex-shrink: 0;
 }
 
 .page-btn {

@@ -65,6 +65,7 @@
 import { ref, watch, reactive } from 'vue'
 import { Plus, Camera } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { updateUserInfo } from '@/api/userinfo'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -105,15 +106,25 @@ const handleAvatarChange = (file) => {
   form.avatar = URL.createObjectURL(file.raw)
 }
 
-const handleSave = () => {
+const handleSave = async () => {
   loading.value = true
-  // Simulate API call
-  setTimeout(() => {
+  try {
+    // 调用后端API保存用户信息
+    const response = await updateUserInfo(form)
+    
+    if (response.code === 200 || response.success) {
+      ElMessage.success('保存成功')
+      emit('save', { ...form })
+      handleClose()
+    } else {
+      ElMessage.error(response.message || '保存失败')
+    }
+  } catch (error) {
+    console.error('保存用户信息失败:', error)
+    ElMessage.error('保存失败，请稍后重试')
+  } finally {
     loading.value = false
-    ElMessage.success('保存成功')
-    emit('save', { ...form })
-    handleClose()
-  }, 800)
+  }
 }
 </script>
 

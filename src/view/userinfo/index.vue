@@ -242,12 +242,13 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { useLoginStore } from '@/pinia/modules/login'
 import { logout } from '@/api/login'
 import { clearUserLoginInfo } from '@/utils/login'
+import { getUserInfo } from '@/api/userinfo'
 import EditProfileModal from './components/EditProfileModal.vue'
 import { 
   Bell, 
@@ -273,12 +274,49 @@ const loginStore = useLoginStore()
 
 // 用户数据状态
 const userInfo = reactive({
-  avatar: 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png',
-  name: '李明哲',
-  job: '高级产品经理',
-  email: 'mingzhe.li@flowpulse.com',
-  location: '上海市浦东新区',
-  description: '专注用户体验与自动化流程优化，致力于打造高效能产品。'
+  avatar: '',
+  name: '',
+  job: '',
+  email: '',
+  location: '',
+  description: ''
+})
+
+// 获取用户信息
+const fetchUserInfo = async () => {
+  try {
+    const response = await getUserInfo()
+    if (response.code === 200 || response.success) {
+      const data = response.data || response
+      Object.assign(userInfo, {
+        avatar: data.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png',
+        name: data.name || '未知用户',
+        job: data.job || '',
+        email: data.email || '',
+        location: data.location || '',
+        description: data.description || ''
+      })
+    } else {
+      ElMessage.error(response.message || '获取用户信息失败')
+    }
+  } catch (error) {
+    console.error('获取用户信息失败:', error)
+    ElMessage.error('获取用户信息失败，请稍后重试')
+    // 设置默认值，防止页面显示空白
+    Object.assign(userInfo, {
+      avatar: 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png',
+      name: '未知用户',
+      job: '',
+      email: '',
+      location: '',
+      description: ''
+    })
+  }
+}
+
+// 页面加载时获取用户信息
+onMounted(() => {
+  fetchUserInfo()
 })
 
 const showEditModal = ref(false)
@@ -287,8 +325,11 @@ const openEditModal = () => {
   showEditModal.value = true
 }
 
-const handleSaveProfile = (newData) => {
+const handleSaveProfile = async (newData) => {
+  // 先更新本地数据，提供即时反馈
   Object.assign(userInfo, newData)
+  // 然后重新获取最新的用户信息，确保数据一致性
+  await fetchUserInfo()
 }
 
 const goHome = () => {
