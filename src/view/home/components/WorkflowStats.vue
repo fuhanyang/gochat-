@@ -137,16 +137,19 @@ const containerHeight = ref(0)
 const calculatePageSize = () => {
   if (listContainerRef.value) {
     const containerRect = listContainerRef.value.getBoundingClientRect()
-    const itemHeight = 50 // 单个执行记录卡片的实际高度（根据实际测量调整）
+    // 预估每个卡片的基础高度(约44px) + 间距(6px) = 50px
+    // 我们希望计算出的数量 N 使得：N * itemHeight <= availableHeight
+    // 剩下的空间将由 flex: 1 自动拉伸填满
+    const itemEstimateHeight = 50 
     
     // 直接使用 scrollable-list-wrapper 的可用高度
     const availableHeight = containerRect.height
     
-    // 确保不超出容器：减去更多缓冲空间，确保不会出现滚动条
-    const calculatedSize = Math.max(12, Math.floor((availableHeight - 20) / itemHeight))
+    // 向下取整，确保不溢出。CSS flex: 1 会处理剩余空间
+    const calculatedSize = Math.max(1, Math.floor(availableHeight / itemEstimateHeight))
     pageSize.value = calculatedSize
     
-    console.log('Container height:', containerRect.height, 'Item height:', itemHeight, 'Calculated size:', calculatedSize)
+    console.log('Container height:', containerRect.height, 'Calculated size:', calculatedSize)
   }
 }
 
@@ -307,6 +310,8 @@ const viewExecutionDetail = (record) => {
   flex: 1;
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  height: 100%;
 }
 
 /* 执行记录卡片 */
@@ -314,17 +319,18 @@ const viewExecutionDetail = (record) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 0 12px; /* 减少垂直 padding，由 height/flex 控制 */
   border-radius: 12px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.6), rgba(248, 250, 252, 0.4));
   backdrop-filter: blur(10px);
   border: 1px solid rgba(102, 126, 234, 0.1);
-  margin-bottom: 5px;
+  margin-bottom: 0;
   position: relative;
   cursor: pointer;
   transition: all 0.3s ease;
   overflow: hidden;
-  flex-shrink: 0;
+  flex: 1; /* 自动拉伸填满高度 */
+  min-height: 40px; /* 最小高度防止过度压缩 */
 }
 
 .execution-card:hover {

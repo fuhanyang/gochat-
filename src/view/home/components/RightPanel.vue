@@ -26,6 +26,10 @@
             <i class="tab-icon">📊</i>
             <span>工作流统计</span>
           </div>
+          <div class="tab-item" :class="{ active: activeTab === 'notes' }" @click="activeTab = 'notes'">
+            <i class="tab-icon">📝</i>
+            <span>知识笔记</span>
+          </div>
         </div>
         
         <!-- 好友列表标签页 -->
@@ -48,6 +52,11 @@
         <div class="tab-content" v-if="activeTab === 'workflow'">
           <WorkflowStats />
         </div>
+
+        <!-- 笔记功能 -->
+        <div class="tab-content" v-if="activeTab === 'notes'">
+          <NotesPanel />
+        </div>
       </div>
     </transition>
   </div>
@@ -59,6 +68,7 @@ import ChatWindow from './ChatWindow.vue'
 import FriendsList from './FriendsList.vue'
 import HotNewsList from './HotNewsList.vue'
 import WorkflowStats from './WorkflowStats.vue'
+import NotesPanel from './NotesPanel.vue'
 
 const emit = defineEmits(['show-context-menu', 'show-profile', 'like-user', 'start-chat', 'send-request'])
 
