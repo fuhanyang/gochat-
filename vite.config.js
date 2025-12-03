@@ -11,9 +11,16 @@ export default ({
     `.env.${NODE_ENV}`
   ]
   for (const file of envFiles) {
-    const envConfig = dotenv.parse(fs.readFileSync(file))
-    for (const k in envConfig) {
-      process.env[k] = envConfig[k]
+    // 检查文件是否存在，如果不存在则跳过（适用于CI/CD环境）
+    if (fs.existsSync(file)) {
+      try {
+        const envConfig = dotenv.parse(fs.readFileSync(file))
+        for (const k in envConfig) {
+          process.env[k] = envConfig[k]
+        }
+      } catch (error) {
+        console.warn(`Warning: Failed to parse ${file}:`, error.message)
+      }
     }
   }
 
@@ -55,6 +62,7 @@ export default ({
     server: {
       // 如果使用docker-compose开发模式，设置为false
       open: true,
+      host: '127.0.0.1', // 强制使用 IPv4，避免 IPv6 权限问题
       port: process.env.VITE_CLI_PORT,
       proxy: {
         // 把key的路径代理到target位置

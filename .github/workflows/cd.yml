@@ -1,0 +1,144 @@
+name: CD - Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - dev
+
+env:
+  # TODO: Replace with your Docker Hub username or registry URL
+  IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/cyglowflow-frontend
+  CONTAINER_NAME: cyglowflow-frontend-app
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    outputs:
+      IMAGE_TAG: ${{ steps.build-env.outputs.IMAGE_TAG }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Determine build mode and image tag
+        id: build-env
+        run: |
+          REF="${{ github.ref }}"
+          # Initialize variables
+          MODE="development"
+          CMD="build:dev"
+          BASE_IMAGE_NAME="${{ env.IMAGE_NAME }}"
+          
+          # Default tags (include sha)
+          TAGS="$BASE_IMAGE_NAME:${{ github.sha }}"
+
+          if [[ "$REF" =~ ^refs/tags/v ]]; then
+            # Tag push -> Production
+            MODE="production"
+            CMD="build:prod"
+            # Add tag name
+            TAGS="$BASE_IMAGE_NAME:${{ github.ref_name }},$TAGS"
+            SAFE_REF="${{ github.ref_name }}"
+            echo "IMAGE_TAG=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          
+          elif [[ "$REF" == "refs/heads/main" ]]; then
+            # Main branch -> Production
+            MODE="production"
+            CMD="build:prod"
+            # Add latest and main
+            TAGS="$BASE_IMAGE_NAME:latest,$BASE_IMAGE_NAME:main,$TAGS"
+            SAFE_REF="main"
+            echo "IMAGE_TAG=latest" >> $GITHUB_OUTPUT
+          
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # Pull Request -> Development
+            MODE="development"
+            CMD="build:dev"
+            # Add PR tag
+            TAGS="$BASE_IMAGE_NAME:pr-${{ github.event.number }},$TAGS"
+            SAFE_REF="pr-${{ github.event.number }}"
+            echo "IMAGE_TAG=pr-${{ github.event.number }}" >> $GITHUB_OUTPUT
+          
+          else
+            # Dev branch or other -> Development
+            MODE="development"
+            CMD="build:dev"
+            TAGS="$BASE_IMAGE_NAME:dev,$TAGS"
+            SAFE_REF="dev"
+            echo "IMAGE_TAG=dev" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "mode=$MODE" >> $GITHUB_OUTPUT
+          echo "BUILD_CMD=$CMD" >> $GITHUB_OUTPUT
+          echo "DOCKER_TAGS=$TAGS" >> $GITHUB_OUTPUT
+          echo "SAFE_REF=$SAFE_REF" >> $GITHUB_OUTPUT
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: "Build and Push Docker image"
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          # Push only if not a Pull Request
+          push: ${{ github.event_name != 'pull_request' }}
+          build-args: |
+            BUILD_MODE=${{ steps.build-env.outputs.mode }}
+            BUILD_CMD=${{ steps.build-env.outputs.BUILD_CMD }}
+          tags: ${{ steps.build-env.outputs.DOCKER_TAGS }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # We don't need local tar output anymore if we are pushing to registry
+          # But for PRs, we might want to keep it or just build without push.
+      
+  deploy:
+    name: Deploy to Server
+    needs: build-and-push
+    # Only deploy on push to main or dev (or tags), skip for PRs
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          # port: ${{ secrets.SSH_PORT }} # Optional, default 22
+          script: |
+            # Login to Docker Hub on server (optional if repo is public)
+            # echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+            
+            # Pull the new image
+            docker pull ${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.IMAGE_TAG }}
+            
+            # Stop and remove old container
+            docker stop ${{ env.CONTAINER_NAME }} || true
+            docker rm ${{ env.CONTAINER_NAME }} || true
+            
+            # Run new container
+            docker run -d \
+              --name ${{ env.CONTAINER_NAME }} \
+              --restart unless-stopped \
+              -p 80:80 \
+              ${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.IMAGE_TAG }}
+            
+            # Clean up unused images
+            docker image prune -f

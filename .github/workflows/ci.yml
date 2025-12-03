@@ -1,0 +1,78 @@
+name: CI - Build and Test
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+  build:
+    name: Build Vue Application
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Determine build mode
+        id: build-mode
+        run: |
+          # Default safe ref
+          SAFE_REF="${{ github.ref_name }}"
+          
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "mode=production" >> $GITHUB_OUTPUT
+            echo "BUILD_CMD=build:prod" >> $GITHUB_OUTPUT
+            SAFE_REF="main"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "mode=development" >> $GITHUB_OUTPUT
+            echo "BUILD_CMD=build:dev" >> $GITHUB_OUTPUT
+            SAFE_REF="pr-${{ github.event.number }}"
+          else
+            echo "mode=development" >> $GITHUB_OUTPUT
+            echo "BUILD_CMD=build:dev" >> $GITHUB_OUTPUT
+            # Sanitize ref_name for artifact name (replace / with -)
+            SAFE_REF=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
+          fi
+          
+          echo "SAFE_REF=$SAFE_REF" >> $GITHUB_OUTPUT
+      
+      - name: Build application (${{ steps.build-mode.outputs.mode }})
+        run: npm run ${{ steps.build-mode.outputs.BUILD_CMD }}
+        env:
+          NODE_ENV: ${{ steps.build-mode.outputs.mode }}
+      
+      - name: Check dist directory
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "Error: dist directory was not created"
+            exit 1
+          fi
+          echo "Build successful! Contents of dist:"
+          ls -la dist/
+          du -sh dist/
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ steps.build-mode.outputs.SAFE_REF }}-${{ github.sha }}
+          path: dist/
+          retention-days: 7
